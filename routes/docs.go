@@ -17,5 +17,5 @@ func DocsRoutes(r chi.Router) {
 		r.Delete("/docs/{id}", controllers.DeleteDoc)
 	})
 
-	r.Post("/doc/sign", controllers.SignDoc)
+	r.Post("/doc/sign/{id}", controllers.SignDoc)
 }

@@ -521,5 +521,11 @@ func DeleteDoc(w http.ResponseWriter, r *http.Request) {
 }
 
 func SignDoc(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+
+	if id == "" {
+		lib.ErrorJSON(w, http.StatusBadRequest, "Missing required field: id")
+		return
+	}
 
 }
