@@ -41,7 +41,7 @@ func RunInit() error {
 		bcrypt.DefaultCost,
 	)
 
-	_, err := database.DB.Exec("INSERT INTO SETTINGS (login_email, login_password_hash) VALUES (?, ?)", adminUsername, hash)
+	_, err = database.DB.Exec("INSERT INTO SETTINGS (login_email, login_password_hash) VALUES (?, ?)", adminUsername, hash)
 
 	fmt.Println("Initialization completed")
 
