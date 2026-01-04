@@ -21,6 +21,8 @@ import (
 func GetAllDocs(w http.ResponseWriter, r *http.Request) {
 	page := r.URL.Query().Get("page")
 	keyword := r.URL.Query().Get("keyword")
+	limit := r.URL.Query().Get("limit")
+	signed := r.URL.Query().Get("signed")
 
 	var keywordParam *string
 	if keyword != "" {
@@ -33,7 +35,7 @@ func GetAllDocs(w http.ResponseWriter, r *http.Request) {
 	if page == "" {
 		page = "1"
 	}
-	limit := r.URL.Query().Get("limit")
+
 	if limit == "" {
 		limit = "10"
 	}
@@ -50,7 +52,6 @@ func GetAllDocs(w http.ResponseWriter, r *http.Request) {
 
 	offset := (pageInt - 1) * limitInt
 
-	signed := r.URL.Query().Get("signed")
 	var signedParam *bool
 	if signed == "true" {
 		b := true
@@ -487,9 +488,6 @@ func SignDoc(w http.ResponseWriter, r *http.Request) {
 
 	ip := lib.GetClientIP(r)
 
-	fmt.Println("IP:", ip)
-	fmt.Println("Allowed", doc.IpWhitelist)
-
 	if !lib.IsIPAllowed(ip, doc.IpWhitelist) {
 		lib.ErrorJSON(w, http.StatusBadRequest, "IP not allowed")
 		return
@@ -550,4 +548,34 @@ func SignDoc(w http.ResponseWriter, r *http.Request) {
 	}
 
 	lib.SuccessJSON(w, http.StatusOK, "Signed document")
+}
+
+func ViewDoc(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+
+	if id == "" {
+		lib.ErrorJSON(w, http.StatusBadRequest, "Missing required field: id")
+		return
+	}
+
+	doc, docErr := database.GetDocByID(id)
+
+	if errors.Is(docErr, sql.ErrNoRows) {
+		lib.ErrorJSON(w, http.StatusNotFound, "Document not found")
+		return
+	}
+
+	if docErr != nil {
+		lib.ErrorJSON(w, http.StatusInternalServerError, "Could not get document")
+		return
+	}
+
+	ip := lib.GetClientIP(r)
+
+	if !lib.IsIPAllowed(ip, doc.IpWhitelist) {
+		lib.ErrorJSON(w, http.StatusBadRequest, "IP not allowed")
+		return
+	}
+
+	lib.SuccessJSON(w, http.StatusOK, doc)
 }
