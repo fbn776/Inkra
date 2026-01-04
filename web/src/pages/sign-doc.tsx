@@ -92,6 +92,7 @@ export default function SignDocPage() {
 
             // Save the modified PDF
             const modifiedPdfBytes = await pdfDoc.save();
+            // @ts-ignore
             const pdfBlob = new Blob([modifiedPdfBytes], { type: "application/pdf" });
 
             // Create form data and submit

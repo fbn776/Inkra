@@ -4,10 +4,12 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/fbn776/inkra/config"
 	"github.com/fbn776/inkra/database"
+	"github.com/fbn776/inkra/lib"
 	"github.com/fbn776/inkra/routes"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -56,23 +58,26 @@ func main() {
 	fileServer := http.FileServer(http.Dir("./docs"))
 	r.Handle("/docs/*", http.StripPrefix("/docs", fileServer))
 
-	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("Home Page"))
-	})
-
 	r.Route("/api", func(r chi.Router) {
 		routes.AuthRouter(r)
 		routes.DocsRoutes(r)
 	})
 
+	r.Handle("/*", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		path := "./static" + r.URL.Path
+		if _, err := os.Stat(path); err == nil {
+			http.ServeFile(w, r, path)
+			return
+		}
+		http.ServeFile(w, r, "./static/index.html")
+	}))
+
 	r.NotFound(func(writer http.ResponseWriter, request *http.Request) {
-		writer.WriteHeader(http.StatusNotFound)
-		_, _ = writer.Write([]byte("404 page not found"))
+		lib.ErrorJSON(writer, http.StatusNotFound, "Page not found")
 	})
 
 	r.MethodNotAllowed(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(405)
-		w.Write([]byte("method is not valid"))
+		lib.ErrorJSON(w, http.StatusMethodNotAllowed, "Method not allowed")
 	})
 
 	fmt.Println("Server started on port", config.AppConfig.Port)
