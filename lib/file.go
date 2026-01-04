@@ -7,9 +7,9 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-)
 
-const MaxFileSize = 100 << 20
+	"github.com/fbn776/inkra/config"
+)
 
 func SaveMultipartFile(
 	file multipart.File,
@@ -18,7 +18,7 @@ func SaveMultipartFile(
 	dstName string,
 ) (string, error) {
 
-	if header.Size > MaxFileSize {
+	if header.Size > config.AppConfig.MaxFileSize {
 		return "", errors.New("file too large")
 	}
 

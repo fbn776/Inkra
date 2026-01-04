@@ -41,6 +41,7 @@ func InitDB() error {
 		is_signed BOOLEAN NOT NULL DEFAULT 0 CHECK (is_signed IN (0, 1)),
 		signed_at DATETIME,
 		signed_by_metadata TEXT,
+		remarks TEXT,
 		signed_by_ip TEXT,
 		
 		ip_whitelist TEXT DEFAULT '[]' NOT NULL,

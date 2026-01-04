@@ -1,35 +1,22 @@
 package controllers
 
 import (
+	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"path/filepath"
 	"strconv"
 	"time"
 
+	"github.com/fbn776/inkra/config"
 	"github.com/fbn776/inkra/database"
 	"github.com/fbn776/inkra/lib"
+	"github.com/fbn776/inkra/managers"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 )
-
-type Document struct {
-	Id               string   `json:"id"`
-	Title            string   `json:"title"`
-	Description      *string  `json:"description,omitempty"`
-	Tags             []string `json:"tags,omitempty"`
-	OriginalName     string   `json:"originalName"`
-	OriginalPath     string   `json:"originalPath"`
-	SignedName       *string  `json:"signedName,omitempty"`
-	SignedPath       *string  `json:"signedPath,omitempty"`
-	IsSigned         bool     `json:"isSigned"`
-	SignedAt         *string  `json:"signedAt,omitempty"`
-	SignedByMetadata *string  `json:"signedByMetadata,omitempty"`
-	SignedByIp       *string  `json:"signedByIp,omitempty"`
-	IpWhitelist      []string `json:"ipWhitelist"`
-	CreatedAt        string   `json:"createdAt"`
-}
 
 func GetAllDocs(w http.ResponseWriter, r *http.Request) {
 	page := r.URL.Query().Get("page")
@@ -90,7 +77,10 @@ func GetAllDocs(w http.ResponseWriter, r *http.Request) {
 		    signed_by_metadata,
 		    signed_by_ip,
 		    ip_whitelist,
-		    created_at
+		    deleted_at,
+		    deleted,
+		    created_at,
+		    updated_at
 		FROM documents
 		WHERE 
 		    deleted = 0 AND
@@ -154,10 +144,10 @@ func GetAllDocs(w http.ResponseWriter, r *http.Request) {
 	}
 	defer queryRes.Close()
 
-	var docs []Document
+	var docs []database.Document
 
 	for queryRes.Next() {
-		var doc Document
+		var doc database.Document
 		var tagsJson, ipJson string
 
 		scanErr := queryRes.Scan(
@@ -174,8 +164,12 @@ func GetAllDocs(w http.ResponseWriter, r *http.Request) {
 			&doc.SignedByMetadata,
 			&doc.SignedByIp,
 			&ipJson,
+			&doc.DeletedAt,
+			&doc.Deleted,
 			&doc.CreatedAt,
+			&doc.UpdatedAt,
 		)
+
 		if scanErr != nil {
 			fmt.Println("ERROR AT DOC SCANNER", scanErr)
 			lib.ErrorJSON(w, http.StatusInternalServerError, "Could not scan row")
@@ -212,57 +206,15 @@ func GetDocById(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var doc Document
-	var tagsJson, ipJson string
+	doc, docErr := database.GetDocByID(id)
 
-	scanErr := database.DB.QueryRow(`
-		SELECT 
-		    id,
-		    title,
-		    description,
-		    tags,
-		    original_name,
-		    original_path,
-		    signed_name,
-		    signed_path,
-		    is_signed,
-		    signed_at,
-		    signed_by_metadata,
-		    signed_by_ip,
-		    ip_whitelist,
-		    created_at
-		FROM DOCUMENTS
-		WHERE id = ?
-	`, id).Scan(
-		&doc.Id,
-		&doc.Title,
-		&doc.Description,
-		&tagsJson,
-		&doc.OriginalName,
-		&doc.OriginalPath,
-		&doc.SignedName,
-		&doc.SignedPath,
-		&doc.IsSigned,
-		&doc.SignedAt,
-		&doc.SignedByMetadata,
-		&doc.SignedByIp,
-		&ipJson,
-		&doc.CreatedAt,
-	)
-	if scanErr != nil {
-		fmt.Println("ERROR AT DOC SCANNER", scanErr)
-		lib.ErrorJSON(w, http.StatusInternalServerError, "Could not scan row")
+	if errors.Is(docErr, sql.ErrNoRows) {
+		lib.ErrorJSON(w, http.StatusNotFound, "Document not found")
 		return
 	}
 
-	tagsErr := json.Unmarshal([]byte(tagsJson), &doc.Tags)
-	if tagsErr != nil {
-		lib.ErrorJSON(w, http.StatusInternalServerError, "Could not parse tags")
-		return
-	}
-	ipErr := json.Unmarshal([]byte(ipJson), &doc.IpWhitelist)
-	if ipErr != nil {
-		lib.ErrorJSON(w, http.StatusInternalServerError, "Could not parse ip whitelist")
+	if docErr != nil {
+		lib.ErrorJSON(w, http.StatusInternalServerError, "Could not get document")
 		return
 	}
 
@@ -270,7 +222,7 @@ func GetDocById(w http.ResponseWriter, r *http.Request) {
 }
 
 func CreateDoc(w http.ResponseWriter, r *http.Request) {
-	parseErr := r.ParseMultipartForm(100 << 20) // 100 MB
+	parseErr := r.ParseMultipartForm(config.AppConfig.MaxFileSize)
 
 	if parseErr != nil {
 		lib.ErrorJSON(w, http.StatusBadRequest, "Error parsing multipart form")
@@ -300,18 +252,6 @@ func CreateDoc(w http.ResponseWriter, r *http.Request) {
 
 	file, header, formFileErr := r.FormFile("file")
 
-	isPdf, isPdfErr := lib.IsPDF(file)
-
-	if isPdfErr != nil {
-		lib.ErrorJSON(w, http.StatusInternalServerError, "Error parsing pdf")
-		return
-	}
-
-	if !isPdf {
-		lib.ErrorJSON(w, http.StatusInternalServerError, "File is not a pdf")
-		return
-	}
-
 	if formFileErr != nil {
 		lib.ErrorJSON(w, http.StatusBadRequest, "Error parsing multipart form")
 		return
@@ -324,8 +264,20 @@ func CreateDoc(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if header.Size > lib.MaxFileSize {
+	if header.Size > config.AppConfig.MaxFileSize {
 		lib.ErrorJSON(w, http.StatusBadRequest, "File too large")
+		return
+	}
+
+	isPdf, isPdfErr := lib.IsPDF(file)
+
+	if isPdfErr != nil {
+		lib.ErrorJSON(w, http.StatusInternalServerError, "Error parsing pdf")
+		return
+	}
+
+	if !isPdf {
+		lib.ErrorJSON(w, http.StatusInternalServerError, "File is not a pdf")
 		return
 	}
 
@@ -387,7 +339,7 @@ func UpdateDoc(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	parseErr := r.ParseMultipartForm(100 << 20) // 100 MB
+	parseErr := r.ParseMultipartForm(config.AppConfig.MaxFileSize)
 
 	if parseErr != nil {
 		lib.ErrorJSON(w, http.StatusBadRequest, "Error parsing multipart form")
@@ -416,35 +368,18 @@ func UpdateDoc(w http.ResponseWriter, r *http.Request) {
 	}
 
 	file, header, formFileErr := r.FormFile("file")
-
-	isPdf, isPdfErr := lib.IsPDF(file)
-
-	if isPdfErr != nil {
-		lib.ErrorJSON(w, http.StatusInternalServerError, "Error parsing pdf")
-		return
-	}
-
-	if !isPdf {
-		lib.ErrorJSON(w, http.StatusInternalServerError, "File is not a pdf")
-		return
-	}
-
 	if formFileErr != nil {
 		lib.ErrorJSON(w, http.StatusBadRequest, "Error parsing multipart form")
 		return
 	}
 
+	docHandleErr := managers.HandleDocPdfErrors(&file, header)
+	if docHandleErr != nil {
+		lib.ErrorJSON(w, http.StatusBadRequest, docHandleErr.Error())
+		return
+	}
+
 	defer file.Close()
-
-	if header == nil {
-		lib.ErrorJSON(w, http.StatusBadRequest, "No file uploaded")
-		return
-	}
-
-	if header.Size > lib.MaxFileSize {
-		lib.ErrorJSON(w, http.StatusBadRequest, "File too large")
-		return
-	}
 
 	safeName := uuid.New().String() + filepath.Ext(header.Filename)
 
@@ -522,10 +457,97 @@ func DeleteDoc(w http.ResponseWriter, r *http.Request) {
 
 func SignDoc(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
+	metadata := r.FormValue("metadata")
+	remarks := r.FormValue("remarks")
 
 	if id == "" {
 		lib.ErrorJSON(w, http.StatusBadRequest, "Missing required field: id")
 		return
 	}
 
+	doc, docErr := database.GetDocByID(id)
+
+	if errors.Is(docErr, sql.ErrNoRows) {
+		lib.ErrorJSON(w, http.StatusNotFound, "Document not found")
+		return
+	}
+
+	if docErr != nil {
+		lib.ErrorJSON(w, http.StatusInternalServerError, "Could not get document")
+		return
+	}
+
+	if doc.Deleted {
+		lib.ErrorJSON(w, http.StatusBadRequest, "Document is deleted")
+	}
+
+	if doc.IsSigned {
+		lib.ErrorJSON(w, http.StatusBadRequest, "Document is already signed")
+	}
+
+	ip := lib.GetClientIP(r)
+
+	fmt.Println("IP:", ip)
+	fmt.Println("Allowed", doc.IpWhitelist)
+
+	if !lib.IsIPAllowed(ip, doc.IpWhitelist) {
+		lib.ErrorJSON(w, http.StatusBadRequest, "IP not allowed")
+		return
+	}
+
+	parseErr := r.ParseMultipartForm(config.AppConfig.MaxFileSize)
+	if parseErr != nil {
+		lib.ErrorJSON(w, http.StatusBadRequest, "Error parsing multipart form")
+		return
+	}
+
+	file, header, formFileErr := r.FormFile("file")
+
+	if formFileErr != nil {
+		lib.ErrorJSON(w, http.StatusBadRequest, "Error parsing multipart form")
+		return
+	}
+
+	defer file.Close()
+
+	docHandleErr := managers.HandleDocPdfErrors(&file, header)
+
+	if docHandleErr != nil {
+		lib.ErrorJSON(w, http.StatusBadRequest, docHandleErr.Error())
+		return
+	}
+
+	safeName := "signed_" + uuid.New().String() + filepath.Ext(header.Filename)
+
+	savePath, saveErr := lib.SaveMultipartFile(file, header, "./docs/signed", safeName)
+
+	if saveErr != nil {
+		lib.ErrorJSON(w, http.StatusInternalServerError, "Could not save file")
+		return
+	}
+
+	exec, updateErr := database.DB.Exec(`
+		UPDATE DOCUMENTS SET 
+		                     signed_name = ?,
+		                     signed_path = ?,
+		                     is_signed = 1,
+		                     signed_at = ?,
+		                     signed_by_metadata = ?,
+		                     remarks = ?,
+		                     signed_by_ip = ?
+		                 WHERE id = ?	                 
+	`, safeName, savePath, time.Now(), metadata, remarks, ip, id)
+
+	if updateErr != nil {
+		fmt.Println("Error updating document", updateErr)
+		lib.ErrorJSON(w, http.StatusInternalServerError, "Could not update document")
+	}
+
+	_, updateErr = exec.RowsAffected()
+
+	if updateErr != nil {
+		lib.ErrorJSON(w, http.StatusInternalServerError, "No rows affected")
+	}
+
+	lib.SuccessJSON(w, http.StatusOK, "Signed document")
 }

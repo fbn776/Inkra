@@ -2,6 +2,7 @@ package lib
 
 import (
 	"encoding/json"
+	"net"
 	"net/http"
 	"strings"
 	"time"
@@ -58,4 +59,45 @@ func CsvToSlice(input string) []string {
 	}
 
 	return result
+}
+
+func GetClientIP(r *http.Request) string {
+	if xff := r.Header.Get("X-Forwarded-For"); xff != "" {
+		ips := strings.Split(xff, ",")
+		return strings.TrimSpace(ips[0])
+	}
+
+	if xrip := r.Header.Get("X-Real-IP"); xrip != "" {
+		return xrip
+	}
+
+	host, _, err := net.SplitHostPort(r.RemoteAddr)
+	if err == nil {
+		return host
+	}
+
+	return r.RemoteAddr
+}
+
+func IsIPAllowed(ipStr string, whitelist []string) bool {
+	if len(whitelist) == 0 {
+		return true
+	}
+
+	ip := net.ParseIP(ipStr)
+	if ip == nil {
+		return false
+	}
+
+	for _, entry := range whitelist {
+		if strings.Contains(entry, "/") {
+			_, subnet, err := net.ParseCIDR(entry)
+			if err == nil && subnet.Contains(ip) {
+				return true
+			}
+		} else if ipStr == entry {
+			return true
+		}
+	}
+	return false
 }

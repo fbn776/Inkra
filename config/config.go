@@ -7,6 +7,7 @@ type Config struct {
 	JwtSecret     string
 	AdminUsername string
 	AdminPassword string
+	MaxFileSize   int64
 }
 
 var AppConfig Config
@@ -24,5 +25,6 @@ func Load() {
 		JwtSecret:     getEnv("JWT_SECRET", "dev-secret"),
 		AdminUsername: getEnv("ADMIN_USERNAME", ""),
 		AdminPassword: getEnv("ADMIN_PASSWORD", ""),
+		MaxFileSize:   100 << 20,
 	}
 }

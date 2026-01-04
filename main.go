@@ -56,5 +56,6 @@ func main() {
 		w.Write([]byte("method is not valid"))
 	})
 
+	fmt.Println("Server started on port", config.AppConfig.Port)
 	http.ListenAndServe(":"+config.AppConfig.Port, r)
 }
