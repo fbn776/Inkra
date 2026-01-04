@@ -5,10 +5,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/fbn776/inkra/database"
 	"github.com/fbn776/inkra/lib"
 	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/httprate"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -20,7 +22,7 @@ type LoginRequest struct {
 func AuthRouter(r chi.Router) {
 	var getUSerByEmailStmt, _ = database.DB.Prepare("SELECT login_email, login_password_hash from settings where login_email = ?")
 
-	r.Post("/login", func(res http.ResponseWriter, req *http.Request) {
+	r.With(httprate.LimitByIP(5, time.Minute)).Post("/login", func(res http.ResponseWriter, req *http.Request) {
 		var loginRequest LoginRequest
 
 		if err := json.NewDecoder(req.Body).Decode(&loginRequest); err != nil {
