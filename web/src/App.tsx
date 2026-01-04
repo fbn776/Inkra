@@ -1,7 +1,6 @@
-import {ComponentExample} from "@/components/component-example";
 
 export function App() {
-    return <ComponentExample/>;
+    return <div>App</div>;
 }
 
 export default App;

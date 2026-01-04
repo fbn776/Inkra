@@ -37,9 +37,9 @@ export default function LoginPage() {
 
             const res = await ApiInstance.post("/api/login", data);
 
-            window.localStorage.setItem("token", res.data.token);
+            window.localStorage.setItem("token", res?.data?.data?.token);
 
-            navigate("/dashboard")
+            navigate("/admin")
         } catch (err: any) {
             console.log("Login error:", err.response?.data);
             setError(err?.response?.data?.message || "Login failed. Please check your credentials.")
