@@ -31,12 +31,7 @@ export interface GetAllDocsResponse {
 }
 
 export interface GetDocResponse {
-    data: {
-        limit: string;
-        page: string;
-        total: number;
-        docs: Document;
-    };
+    data: Document;
     success: boolean;
 }
 
@@ -56,5 +51,5 @@ export interface GetDocsParams {
     page?: number;
     limit?: number;
     keyword?: string;
-    signed?: 0 | 1;
+    signed?: "true" | "false";
 }

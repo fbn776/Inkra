@@ -1,10 +1,10 @@
-import { useState } from "react";
-import { useParams, useNavigate } from "react-router";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getDoc, deleteDoc, getFileUrl } from "@/lib/api";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {useState} from "react";
+import {useNavigate, useParams} from "react-router";
+import {useMutation, useQuery, useQueryClient} from "@tanstack/react-query";
+import {deleteDoc, getDoc, getFileUrl} from "@/lib/api";
+import {Button} from "@/components/ui/button";
+import {Badge} from "@/components/ui/badge";
+import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/components/ui/card";
 import {
     AlertDialog,
     AlertDialogAction,
@@ -16,31 +16,31 @@ import {
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import {
-    ArrowLeft,
-    Trash2,
-    Copy,
-    Check,
-    ExternalLink,
-    FileText,
-    Calendar,
-    User,
-    Globe,
-    Tag,
-    Loader2,
     AlertCircle,
+    ArrowLeft,
+    Calendar,
+    Check,
     CheckCircle2,
     Clock,
+    Copy,
+    ExternalLink,
+    FileText,
+    Globe,
+    Loader2,
     MessageSquare,
+    Tag,
+    Trash2,
+    User,
 } from "lucide-react";
 
 export default function AdminViewDocPage() {
-    const { "doc-id": docId } = useParams<{ "doc-id": string }>();
+    const {"doc-id": docId} = useParams<{ "doc-id": string }>();
     const navigate = useNavigate();
     const queryClient = useQueryClient();
     const [deleteOpen, setDeleteOpen] = useState(false);
     const [copied, setCopied] = useState(false);
 
-    const { data, isLoading, isError } = useQuery({
+    const {data, isLoading, isError} = useQuery({
         queryKey: ["doc", docId],
         queryFn: () => getDoc(docId!),
         enabled: !!docId,
@@ -49,14 +49,14 @@ export default function AdminViewDocPage() {
     const deleteMutation = useMutation({
         mutationFn: () => deleteDoc(docId!),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ["docs"] });
+            queryClient.invalidateQueries({queryKey: ["docs"]});
             navigate("/admin");
         },
     });
 
-    const doc = data?.data?.docs;
+    const doc = data?.data;
 
-    const signingLink = `${window.location.origin}/doc/sign/${docId}`;
+    const signingLink = new URL(`/doc/sign/${docId}`, window.location.origin).toString();
 
     const copyLink = async () => {
         await navigator.clipboard.writeText(signingLink);
@@ -67,7 +67,7 @@ export default function AdminViewDocPage() {
     if (isLoading) {
         return (
             <div className="flex items-center justify-center min-h-[60vh]">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                <Loader2 className="h-8 w-8 animate-spin text-primary"/>
             </div>
         );
     }
@@ -76,13 +76,13 @@ export default function AdminViewDocPage() {
         return (
             <div className="container mx-auto px-4 py-8">
                 <div className="flex flex-col items-center justify-center py-12 text-center">
-                    <AlertCircle className="h-12 w-12 text-destructive mb-4" />
+                    <AlertCircle className="h-12 w-12 text-destructive mb-4"/>
                     <h2 className="text-lg font-semibold">Document not found</h2>
                     <p className="text-muted-foreground mb-4">
                         The document you're looking for doesn't exist or has been deleted.
                     </p>
                     <Button onClick={() => navigate("/admin")} variant="outline">
-                        <ArrowLeft className="h-4 w-4 mr-2" />
+                        <ArrowLeft className="h-4 w-4 mr-2"/>
                         Back to Documents
                     </Button>
                 </div>
@@ -95,7 +95,7 @@ export default function AdminViewDocPage() {
             {/* Header */}
             <div className="flex items-center gap-4 mb-6">
                 <Button variant="ghost" size="sm" onClick={() => navigate("/admin")}>
-                    <ArrowLeft className="h-4 w-4 mr-2" />
+                    <ArrowLeft className="h-4 w-4 mr-2"/>
                     Back
                 </Button>
             </div>
@@ -114,12 +114,12 @@ export default function AdminViewDocPage() {
                                 </div>
                                 {doc.isSigned ? (
                                     <Badge className="gap-1 bg-green-600">
-                                        <CheckCircle2 className="h-3 w-3" />
+                                        <CheckCircle2 className="h-3 w-3"/>
                                         Signed
                                     </Badge>
                                 ) : (
                                     <Badge variant="secondary" className="gap-1">
-                                        <Clock className="h-3 w-3" />
+                                        <Clock className="h-3 w-3"/>
                                         Pending
                                     </Badge>
                                 )}
@@ -143,7 +143,7 @@ export default function AdminViewDocPage() {
                     <Card>
                         <CardHeader className="pb-3">
                             <CardTitle className="text-base flex items-center gap-2">
-                                <ExternalLink className="h-4 w-4" />
+                                <ExternalLink className="h-4 w-4"/>
                                 Shareable Link
                             </CardTitle>
                             <CardDescription>
@@ -157,9 +157,9 @@ export default function AdminViewDocPage() {
                                 </code>
                                 <Button size="sm" variant="outline" onClick={copyLink}>
                                     {copied ? (
-                                        <Check className="h-4 w-4 text-green-500" />
+                                        <Check className="h-4 w-4 text-green-500"/>
                                     ) : (
-                                        <Copy className="h-4 w-4" />
+                                        <Copy className="h-4 w-4"/>
                                     )}
                                 </Button>
                             </div>
@@ -170,7 +170,7 @@ export default function AdminViewDocPage() {
                     <Card>
                         <CardHeader className="pb-3">
                             <CardTitle className="text-base flex items-center gap-2">
-                                <FileText className="h-4 w-4" />
+                                <FileText className="h-4 w-4"/>
                                 Document Info
                             </CardTitle>
                         </CardHeader>
@@ -183,7 +183,7 @@ export default function AdminViewDocPage() {
                             )}
 
                             <div className="flex items-center gap-2 text-sm">
-                                <Calendar className="h-4 w-4 text-muted-foreground" />
+                                <Calendar className="h-4 w-4 text-muted-foreground"/>
                                 <span className="text-muted-foreground">Created:</span>
                                 <span>
                                     {new Date(doc.createdAt).toLocaleDateString("en-US", {
@@ -197,7 +197,7 @@ export default function AdminViewDocPage() {
                             {doc.tags.length > 0 && (
                                 <div>
                                     <div className="flex items-center gap-2 text-sm mb-2">
-                                        <Tag className="h-4 w-4 text-muted-foreground" />
+                                        <Tag className="h-4 w-4 text-muted-foreground"/>
                                         <span className="text-muted-foreground">Tags</span>
                                     </div>
                                     <div className="flex flex-wrap gap-1">
@@ -213,7 +213,7 @@ export default function AdminViewDocPage() {
                             {doc.ipWhitelist.length > 0 && (
                                 <div>
                                     <div className="flex items-center gap-2 text-sm mb-2">
-                                        <Globe className="h-4 w-4 text-muted-foreground" />
+                                        <Globe className="h-4 w-4 text-muted-foreground"/>
                                         <span className="text-muted-foreground">IP Whitelist</span>
                                     </div>
                                     <div className="flex flex-wrap gap-1">
@@ -233,14 +233,14 @@ export default function AdminViewDocPage() {
                         <Card className="border-green-500/50">
                             <CardHeader className="pb-3">
                                 <CardTitle className="text-base flex items-center gap-2 text-green-600">
-                                    <CheckCircle2 className="h-4 w-4" />
+                                    <CheckCircle2 className="h-4 w-4"/>
                                     Signature Details
                                 </CardTitle>
                             </CardHeader>
                             <CardContent className="space-y-3">
                                 {doc.signedAt && (
                                     <div className="flex items-center gap-2 text-sm">
-                                        <Calendar className="h-4 w-4 text-muted-foreground" />
+                                        <Calendar className="h-4 w-4 text-muted-foreground"/>
                                         <span className="text-muted-foreground">Signed:</span>
                                         <span>
                                             {new Date(doc.signedAt).toLocaleDateString("en-US", {
@@ -256,7 +256,7 @@ export default function AdminViewDocPage() {
 
                                 {doc.signedByIp && (
                                     <div className="flex items-center gap-2 text-sm">
-                                        <Globe className="h-4 w-4 text-muted-foreground" />
+                                        <Globe className="h-4 w-4 text-muted-foreground"/>
                                         <span className="text-muted-foreground">IP:</span>
                                         <code className="text-xs bg-muted px-2 py-0.5 rounded">
                                             {doc.signedByIp}
@@ -266,7 +266,7 @@ export default function AdminViewDocPage() {
 
                                 {doc.signedByMetadata && (
                                     <div className="flex items-center gap-2 text-sm">
-                                        <User className="h-4 w-4 text-muted-foreground" />
+                                        <User className="h-4 w-4 text-muted-foreground"/>
                                         <span className="text-muted-foreground">Signer:</span>
                                         <span>{doc.signedByMetadata}</span>
                                     </div>
@@ -275,7 +275,7 @@ export default function AdminViewDocPage() {
                                 {doc.remarks && (
                                     <div>
                                         <div className="flex items-center gap-2 text-sm mb-1">
-                                            <MessageSquare className="h-4 w-4 text-muted-foreground" />
+                                            <MessageSquare className="h-4 w-4 text-muted-foreground"/>
                                             <span className="text-muted-foreground">Remarks</span>
                                         </div>
                                         <p className="text-sm bg-muted p-2 rounded">{doc.remarks}</p>
@@ -296,7 +296,7 @@ export default function AdminViewDocPage() {
                                 className="w-full gap-2"
                                 onClick={() => setDeleteOpen(true)}
                             >
-                                <Trash2 className="h-4 w-4" />
+                                <Trash2 className="h-4 w-4"/>
                                 Delete Document
                             </Button>
                         </CardContent>
@@ -324,7 +324,7 @@ export default function AdminViewDocPage() {
                         >
                             {deleteMutation.isPending ? (
                                 <>
-                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin"/>
                                     Deleting...
                                 </>
                             ) : (

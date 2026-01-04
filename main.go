@@ -8,6 +8,7 @@ import (
 
 	"github.com/fbn776/inkra/config"
 	"github.com/fbn776/inkra/database"
+	middleware2 "github.com/fbn776/inkra/middleware"
 	"github.com/fbn776/inkra/routes"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -50,6 +51,11 @@ func main() {
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.Logger)
 	r.Use(httprate.LimitByIP(100, 1*time.Minute))
+
+	r.Use(middleware2.Delay(1 * time.Second))
+
+	fileServer := http.FileServer(http.Dir("./docs"))
+	r.Handle("/docs/*", http.StripPrefix("/docs", fileServer))
 
 	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("Home Page"))

@@ -50,7 +50,8 @@ export default function SignDocPage() {
         enabled: !!docId,
     });
 
-    const doc = data?.data?.docs;
+
+    const doc = data?.data;
 
     const signMutation = useMutation({
         mutationFn: async () => {
