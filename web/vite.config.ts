@@ -12,6 +12,10 @@ export default defineConfig({
        outDir: "../static"
     },
 
+    server: {
+        allowedHosts: ["prescribed-consensus-smile-maria.trycloudflare.com"]
+    },
+
     resolve: {
         alias: {
             "@": path.resolve(__dirname, "./src"),
