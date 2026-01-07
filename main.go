@@ -53,8 +53,6 @@ func main() {
 	r.Use(middleware.Logger)
 	r.Use(httprate.LimitByIP(100, 1*time.Minute))
 
-	//r.Use(middleware2.Delay(1 * time.Second))
-
 	fileServer := http.FileServer(http.Dir("./docs"))
 	r.Handle("/docs/*", http.StripPrefix("/docs", fileServer))
 
