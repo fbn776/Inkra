@@ -50,6 +50,6 @@ export async function signDoc(
 
 // Get the base URL for static file paths
 export function getFileUrl(path: string): string {
-    const baseUrl = import.meta.env.VITE_API_BASE_URL || "";
+    const baseUrl = import.meta.env.VITE_API_BASE_URL || window.location.origin;
     return new URL(path, baseUrl).toString();
 }

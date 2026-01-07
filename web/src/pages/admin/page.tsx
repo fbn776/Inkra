@@ -175,12 +175,12 @@ export default function AdminPage() {
                                     </CardHeader>
                                     <CardContent className="pt-0">
                                         <div className="flex flex-wrap gap-1 mb-3">
-                                            {doc.tags.slice(0, 3).map((tag, i) => (
+                                            {(doc.tags || []).slice(0, 3).map((tag, i) => (
                                                 <Badge key={i} variant="outline" className="text-xs">
                                                     {tag}
                                                 </Badge>
                                             ))}
-                                            {doc.tags.length > 3 && (
+                                            {(doc.tags || []).length > 3 && (
                                                 <Badge variant="outline" className="text-xs">
                                                     +{doc.tags.length - 3}
                                                 </Badge>
