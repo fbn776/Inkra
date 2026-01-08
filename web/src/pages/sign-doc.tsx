@@ -245,15 +245,15 @@ export default function SignDocPage() {
     }
 
     return (
-        <div className="min-h-screen bg-background px-4 py-6 w-full md:flex gap-6 max-md:p-0">
+        <div className="max-md:overflow-hidden h-[100dvh] bg-background px-4 py-6 w-full md:flex gap-6 max-md:p-0">
             {/* PDF Viewer */}
-            <div className="md:flex-3 border max-md:w-full max-md:h-[calc(100vh-4rem)]">
+            <div className="md:flex-3 border max-md:w-full max-md:h-[calc(100dvh-4rem)] max-md:overflow-hidden ">
                 {pdfLoader ?
                     <div className="size-full flex items-center justify-center">
                         <Loader2 className="h-8 w-8 animate-spin text-primary"/>
                     </div> :
                     <iframe ref={iframeRef} width="100%" height="100%"
-                            className="max-md:h-[calc(100vh-4rem)]"/>
+                            className="max-md:overflow-hidden max-md:h-[calc(100dvh-4rem)]"/>
                 }
             </div>
 
