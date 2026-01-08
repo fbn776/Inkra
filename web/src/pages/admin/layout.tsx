@@ -1,7 +1,7 @@
 import { Outlet, useNavigate } from "react-router";
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { LogOut, FileText } from "lucide-react";
+import { LogOut } from "lucide-react";
 
 export default function AdminLayout() {
     const navigate = useNavigate();
@@ -24,11 +24,10 @@ export default function AdminLayout() {
             <header className="sticky top-0 z-50 border-b border-border bg-card/80 backdrop-blur-sm">
                 <div className="container mx-auto px-4 py-3 flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                        <div className="p-2 rounded-lg bg-primary/10">
-                            <FileText className="h-5 w-5 text-primary" />
-                        </div>
                         <div>
-                            <h1 className="text-lg font-semibold">PDF Sign Manager</h1>
+                            <h1 className="text-lg font-semibold">
+                                Inkra
+                            </h1>
                             <p className="text-xs text-muted-foreground">Document Management</p>
                         </div>
                     </div>
