@@ -3,6 +3,9 @@ package database
 import (
 	"database/sql"
 	"fmt"
+	"log"
+	"os"
+	"path/filepath"
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -11,7 +14,16 @@ var DB *sql.DB
 
 func InitDB() error {
 	var err error
-	DB, err = sql.Open("sqlite3", "./data/app.db")
+
+	// If data directory does not exist, create it
+	dataDir := "./data"
+	if err := os.MkdirAll(dataDir, 0755); err != nil {
+		log.Fatalf("failed to create data directory: %v", err)
+	}
+
+	dbPath := filepath.Join(dataDir, "app.db")
+
+	DB, err = sql.Open("sqlite3", dbPath)
 	if err != nil {
 		return err
 	}
