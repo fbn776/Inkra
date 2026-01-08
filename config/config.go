@@ -21,7 +21,7 @@ func getEnv(key, fallback string) string {
 
 func Load() {
 	AppConfig = Config{
-		Port:          getEnv("Port", "8080"),
+		Port:          getEnv("PORT", "8080"),
 		JwtSecret:     getEnv("JWT_SECRET", "dev-secret"),
 		AdminUsername: getEnv("ADMIN_USERNAME", ""),
 		AdminPassword: getEnv("ADMIN_PASSWORD", ""),
