@@ -7,8 +7,6 @@ RUN npm i
 
 COPY web .
 
-RUN rm -rf static
-
 RUN npm run build
 
 FROM golang:1.25.4-alpine AS backend-builder
@@ -35,7 +33,7 @@ RUN apk add --no-cache ca-certificates tzdata
 
 COPY --from=backend-builder /app/inkra /app/inkra
 
-COPY --from=backend-builder /app/static /app/static
+COPY --from=frontend-builder /app/static /app/static
 
 RUN mkdir -p docs/uploads docs/signed data
 
